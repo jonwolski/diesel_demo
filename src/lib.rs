@@ -34,13 +34,16 @@ pub fn create_post<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Po
         .expect(&format!("Saving failed for post: {}", new_post.title))
 }
 
-pub fn top_posts(conn: &PgConnection) -> Vec<Post> {
+pub fn top_posts(conn: &PgConnection, include_unpublished: bool) -> Vec<Post> {
     use schema::posts::dsl::*;
 
-    posts.filter(published.eq(true))
-        .limit(5)
-        .load::<Post>(conn)
-        .expect("Error loading posts")
+    let query = posts.limit(5);
+    let result = match include_unpublished {
+        true  => query.load::<Post>(conn),
+        false => query.filter(published.eq(true)).load::<Post>(conn)
+    };
+
+    result.expect("Error loading posts")
 }
 
 pub fn publish_post(conn: &PgConnection, post_id: i32) -> Post {

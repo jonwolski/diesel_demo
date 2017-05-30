@@ -11,7 +11,7 @@ fn main() {
     match cli::build_cli()
         .get_matches()
         .subcommand() {
-            ("show", Some(_)) => run_show_command(),
+            ("show", Some(args)) => run_show_command(args),
             ("create", Some(_)) => run_create_command(),
             ("publish", Some(args)) => run_publish_command(args),
             _ => unreachable!("The cli parser prevents reaching here"),
@@ -19,10 +19,11 @@ fn main() {
 }
 
 
-fn run_show_command() {
+fn run_show_command(args: &clap::ArgMatches) {
     let connection = establish_connection();
-    let results = top_posts(&connection);
-    cli::print_posts(results);
+    let include_unpublished = args.is_present("all");
+    let posts = top_posts(&connection, include_unpublished);
+    cli::print_posts(posts);
 }
 
 fn run_publish_command(args: &clap::ArgMatches) {

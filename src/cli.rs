@@ -5,7 +5,13 @@ use models::Post;
 pub fn build_cli() -> App<'static, 'static> {
     let show_posts_subcommand = SubCommand::with_name("show")
         .setting(AppSettings::VersionlessSubcommands)
-        .about("Display all posts");
+        .about("Display all posts")
+        .arg(Arg::with_name("all")
+             .short("a")
+             .long("all")
+             .required(false)
+             .help("Show all posts including unpublished in listing")
+            );
 
     let create_posts_subcommand = SubCommand::with_name("create")
         .setting(AppSettings::VersionlessSubcommands)
