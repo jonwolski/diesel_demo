@@ -37,7 +37,7 @@ pub fn create_post<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Po
 pub fn top_posts(conn: &PgConnection, include_unpublished: bool) -> Vec<Post> {
     use schema::posts::dsl::*;
 
-    let query = posts.limit(5);
+    let query = posts.limit(5).order(id);
     let result = match include_unpublished {
         true  => query.load::<Post>(conn),
         false => query.filter(published.eq(true)).load::<Post>(conn)
