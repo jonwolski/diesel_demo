@@ -27,12 +27,37 @@ pub fn build_cli() -> App<'static, 'static> {
             )
         .about("Publish a post identified by its ID");
 
+    let server_subcommand = SubCommand::with_name("server")
+        .setting(AppSettings::VersionlessSubcommands)
+        .arg(Arg::with_name("port")
+             .help("The Web server will listen on this port.")
+             .required(false)
+             .short("p")
+             .long("port")
+             .value_name("PORT")
+             .takes_value(true)
+             .default_value("8000")
+            )
+        .arg(Arg::with_name("ip_binding")
+             .help("The Web server will be bound to this IP address.")
+             .required(false)
+             .short("b")
+             .long("binding")
+             .value_name("IP_ADDRESS")
+             .takes_value(true)
+             .default_value("0.0.0.0")
+            )
+        .about("start Web server");
+
+
+
     App::new("dieseldemo")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::VersionlessSubcommands)
         .subcommand(show_posts_subcommand)
         .subcommand(create_posts_subcommand)
         .subcommand(publish_posts_subcommand)
+        .subcommand(server_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
 }
 

@@ -17,6 +17,7 @@ fn main() {
             ("show", Some(args)) => run_show_command(args),
             ("create", Some(_)) => run_create_command(),
             ("publish", Some(args)) => run_publish_command(args),
+            ("server", Some(args)) => run_server_command(args),
             _ => unreachable!("The cli parser prevents reaching here"),
         }
 }
@@ -53,6 +54,9 @@ fn run_create_command() {
 
     let post = create_post(&connection, &title, &body);
     println!("\nSaved draft {} with id {}", title, post.id);
+}
+
+fn run_server_command(args: &clap::ArgMatches) {
 }
 
 fn database_url() -> String {
