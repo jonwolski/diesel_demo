@@ -12,7 +12,7 @@ name = "posts"
 path = "src/main.rs"
 
 [dependencies]
-diesel = { version = "0.13.0", features = ["postgres"] }
-diesel_codegen = { version = "0.13.0", features = ["postgres"] }
+diesel = { version = "0.16.0", features = ["postgres"] }
+diesel_codegen = { version = "0.16.0", features = ["postgres"] }
 dotenv = "0.9.0"
 clap = "2.20.3"
