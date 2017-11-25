@@ -1,6 +1,7 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 #![feature(use_extern_macros)]
+#![feature(custom_derive)]
 
 extern crate posts;
 #[macro_use]
@@ -79,21 +80,41 @@ fn database_url() -> String {
 use rocket::Rocket;
 use rocket::config::{Config, Environment};
 use rocket_contrib::Json;
+use rocket::http::RawStr;
+use rocket::request::FromFormValue;
 use self::models::Post;
 
-#[get("/")]
-fn index() -> Json<Vec<Post>> {
-	let posts = top_posts(&establish_connection(database_url()), false);
-    Json(posts)
+struct SingletonParam;
+
+#[derive(FromForm)]
+struct Show {
+	all: Option<SingletonParam>,
+}
+
+impl<'v> FromFormValue<'v> for SingletonParam {
+	type Error = ();
+
+	fn from_form_value(_ : &'v RawStr) -> Result<SingletonParam, ()> {
+		Ok(SingletonParam {})
+	}
+}
+
+#[get("/?<all>")]
+fn index(all: Show) -> Json<Vec<Post>> {
+	let show_all = match all.all {
+		Some(_) => true,
+		None => false,
+	};
+	let posts = top_posts(&establish_connection(database_url()), show_all);
+	Json(posts)
 }
 
 pub fn build_rocket(address: &str, port: u16) -> Rocket {
 	let config = Config::build(Environment::active().unwrap())
-			.address(address)
-			.port(port)
-			.finalize()
-			.unwrap();
+		.address(address)
+		.port(port)
+		.finalize()
+		.unwrap();
 	let rocket_instance = rocket::custom(config, false);
-	rocket_instance.mount("/", routes![self::index])
+	rocket_instance.mount("/", routes![index])
 }
-
