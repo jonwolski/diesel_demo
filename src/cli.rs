@@ -38,7 +38,7 @@ pub fn build_cli() -> App<'static, 'static> {
              .takes_value(true)
              .default_value("8000")
             )
-        .arg(Arg::with_name("ip_binding")
+        .arg(Arg::with_name("ip_address")
              .help("The Web server will be bound to this IP address.")
              .required(false)
              .short("b")

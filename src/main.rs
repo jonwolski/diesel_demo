@@ -1,8 +1,14 @@
+#![feature(plugin)]
+#![plugin(rocket_codegen)]
+#![feature(use_extern_macros)]
+
 extern crate posts;
 #[macro_use]
 extern crate clap;
 extern crate diesel;
 extern crate dotenv;
+extern crate rocket;
+extern crate rocket_contrib;
 
 mod cli;
 
@@ -57,6 +63,10 @@ fn run_create_command() {
 }
 
 fn run_server_command(args: &clap::ArgMatches) {
+	build_rocket(
+		args.value_of("ip_address").unwrap(),
+		args.value_of("port").unwrap().parse::<u16>().unwrap(),
+	).launch();
 }
 
 fn database_url() -> String {
@@ -64,3 +74,26 @@ fn database_url() -> String {
     env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set")
 }
+
+// TODO: move this to web.rs
+use rocket::Rocket;
+use rocket::config::{Config, Environment};
+use rocket_contrib::Json;
+use self::models::Post;
+
+#[get("/")]
+fn index() -> Json<Vec<Post>> {
+	let posts = top_posts(&establish_connection(database_url()), false);
+    Json(posts)
+}
+
+pub fn build_rocket(address: &str, port: u16) -> Rocket {
+	let config = Config::build(Environment::active().unwrap())
+			.address(address)
+			.port(port)
+			.finalize()
+			.unwrap();
+	let rocket_instance = rocket::custom(config, false);
+	rocket_instance.mount("/", routes![self::index])
+}
+

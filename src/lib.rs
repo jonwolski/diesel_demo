@@ -1,5 +1,7 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_codegen;
+#[macro_use] extern crate serde_derive;
+extern crate serde_json;
 
 pub mod schema;
 pub mod models;
