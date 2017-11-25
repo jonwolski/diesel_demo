@@ -3,13 +3,13 @@
 #![feature(use_extern_macros)]
 #![feature(custom_derive)]
 
-extern crate posts;
 #[macro_use]
 extern crate clap;
 extern crate diesel;
 extern crate dotenv;
 #[macro_use]
 extern crate lazy_static;
+extern crate posts;
 extern crate rocket;
 extern crate rocket_contrib;
 
@@ -20,15 +20,13 @@ use dotenv::dotenv;
 use std::env;
 
 fn main() {
-    match cli::build_cli()
-        .get_matches()
-        .subcommand() {
-            ("show", Some(args)) => run_show_command(args),
-            ("create", Some(_)) => run_create_command(),
-            ("publish", Some(args)) => run_publish_command(args),
-            ("server", Some(args)) => run_server_command(args),
-            _ => unreachable!("The cli parser prevents reaching here"),
-        }
+    match cli::build_cli().get_matches().subcommand() {
+        ("show", Some(args)) => run_show_command(args),
+        ("create", Some(_)) => run_create_command(),
+        ("publish", Some(args)) => run_publish_command(args),
+        ("server", Some(args)) => run_server_command(args),
+        _ => unreachable!("The cli parser prevents reaching here"),
+    }
 }
 
 
@@ -45,7 +43,7 @@ fn run_publish_command(args: &clap::ArgMatches) {
 
     use posts::schema::posts::dsl::{posts, published};
 
-    let id =  value_t!(args, "ID", i32).unwrap(); // clap guarantees value will have been provided.
+    let id = value_t!(args, "ID", i32).unwrap(); // clap guarantees value will have been provided.
     let connection = establish_connection(database_url());
 
     let post = diesel::update(posts.find(id))
@@ -66,16 +64,15 @@ fn run_create_command() {
 }
 
 fn run_server_command(args: &clap::ArgMatches) {
-	build_rocket(
-		args.value_of("ip_address").unwrap(),
-		args.value_of("port").unwrap().parse::<u16>().unwrap(),
-	).launch();
+    build_rocket(
+        args.value_of("ip_address").unwrap(),
+        args.value_of("port").unwrap().parse::<u16>().unwrap(),
+    ).launch();
 }
 
 fn database_url() -> String {
     dotenv().ok();
-    env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set")
+    env::var("DATABASE_URL").expect("DATABASE_URL must be set")
 }
 
 // TODO: move this to web.rs
@@ -91,40 +88,39 @@ use self::models::Post;
 struct AnyValue;
 
 impl<'v> FromFormValue<'v> for AnyValue {
-	type Error = ();
+    type Error = ();
 
-	fn from_form_value(_ : &'v RawStr) -> Result<AnyValue, ()> {
-		Ok(AnyValue {})
-	}
+    fn from_form_value(_: &'v RawStr) -> Result<AnyValue, ()> {
+        Ok(AnyValue {})
+    }
 }
 
 #[derive(FromForm)]
 struct ShowAll {
-	#[allow(dead_code)]
-	all: AnyValue,
+    #[allow(dead_code)] all: AnyValue,
 }
 
 // Rocket will not treat `/?` and `/` as equivalent
 #[get("/")]
 fn index_no_query() -> Json<Vec<Post>> {
-  index(None)
+    index(None)
 }
 
 #[get("/?<all>")]
 fn index(all: Option<ShowAll>) -> Json<Vec<Post>> {
-	let show_all = all.is_some();
-	let posts = top_posts(&establish_connection(database_url()), show_all);
-	Json(posts)
+    let show_all = all.is_some();
+    let posts = top_posts(&establish_connection(database_url()), show_all);
+    Json(posts)
 }
 
 pub fn build_rocket(address: &str, port: u16) -> Rocket {
-	let config = Config::build(Environment::active().unwrap())
-		.address(address)
-		.port(port)
-		.finalize()
-		.unwrap();
-	let rocket_instance = rocket::custom(config, false);
-	rocket_instance.mount("/", routes![index, index_no_query])
+    let config = Config::build(Environment::active().unwrap())
+        .address(address)
+        .port(port)
+        .finalize()
+        .unwrap();
+    let rocket_instance = rocket::custom(config, false);
+    rocket_instance.mount("/", routes![index, index_no_query])
 }
 
 #[cfg(test)]
@@ -132,19 +128,20 @@ mod test {
     use rocket::local::Client;
     use rocket::http::Status;
 
-	lazy_static! {
-		static ref CLIENT: Client = Client::new(super::build_rocket("0.0.0.0", 8100)).expect("valid rocket instance");
-	}
+    lazy_static! {
+        static ref CLIENT: Client = Client::new(super::build_rocket("0.0.0.0", 8100))
+            .expect("valid rocket instance");
+    }
 
-	#[test]
-	fn get_published_posts() {
-		let response = CLIENT.get("/").dispatch();
-		assert_eq!(response.status(), Status::Ok);
-	}
+    #[test]
+    fn get_published_posts() {
+        let response = CLIENT.get("/").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+    }
 
-	#[test]
-	fn get_all_posts() {
-		let response = CLIENT.get("/?all=").dispatch();
-		assert_eq!(response.status(), Status::Ok);
-	}
+    #[test]
+    fn get_all_posts() {
+        let response = CLIENT.get("/?all=").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+    }
 }

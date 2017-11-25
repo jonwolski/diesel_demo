@@ -1,6 +1,9 @@
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_json;
 
 pub mod schema;
@@ -9,11 +12,10 @@ pub mod models;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 
-use self::models::{Post, NewPost};
+use self::models::{NewPost, Post};
 
 pub fn establish_connection(database_url: String) -> PgConnection {
-    PgConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
 pub fn create_post<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Post {
@@ -24,7 +26,8 @@ pub fn create_post<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Po
         body: body,
     };
 
-    diesel::insert(&new_post).into(posts::table)
+    diesel::insert(&new_post)
+        .into(posts::table)
         .get_result(conn)
         .expect(&format!("Saving failed for post: {}", new_post.title))
 }
@@ -34,8 +37,8 @@ pub fn top_posts(conn: &PgConnection, include_unpublished: bool) -> Vec<Post> {
 
     let query = posts.limit(5).order(id);
     let result = match include_unpublished {
-        true  => query.load::<Post>(conn),
-        false => query.filter(published.eq(true)).load::<Post>(conn)
+        true => query.load::<Post>(conn),
+        false => query.filter(published.eq(true)).load::<Post>(conn),
     };
 
     result.expect("Error loading posts")
@@ -49,4 +52,3 @@ pub fn publish_post(conn: &PgConnection, post_id: i32) -> Post {
         .get_result::<Post>(conn)
         .unwrap()
 }
-

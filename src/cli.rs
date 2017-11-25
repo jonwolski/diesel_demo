@@ -1,17 +1,18 @@
 use clap::{App, AppSettings, Arg, SubCommand};
-use std::io::{stdin,Read};
+use std::io::{stdin, Read};
 use models::Post;
 
 pub fn build_cli() -> App<'static, 'static> {
     let show_posts_subcommand = SubCommand::with_name("show")
         .setting(AppSettings::VersionlessSubcommands)
         .about("Display all posts")
-        .arg(Arg::with_name("all")
-             .short("a")
-             .long("all")
-             .required(false)
-             .help("Show all posts including unpublished in listing")
-            );
+        .arg(
+            Arg::with_name("all")
+                .short("a")
+                .long("all")
+                .required(false)
+                .help("Show all posts including unpublished in listing"),
+        );
 
     let create_posts_subcommand = SubCommand::with_name("create")
         .setting(AppSettings::VersionlessSubcommands)
@@ -19,34 +20,37 @@ pub fn build_cli() -> App<'static, 'static> {
 
     let publish_posts_subcommand = SubCommand::with_name("publish")
         .setting(AppSettings::VersionlessSubcommands)
-        .arg(Arg::with_name("ID")
-             .help("Identifier of the post to publish. I.e. the database record's (integer) ID.")
-             .index(1)
-             .required(true)
-             .takes_value(true)
-            )
+        .arg(
+            Arg::with_name("ID")
+                .help("Identifier of the post to publish. I.e. the database record's (integer) ID.")
+                .index(1)
+                .required(true)
+                .takes_value(true),
+        )
         .about("Publish a post identified by its ID");
 
     let server_subcommand = SubCommand::with_name("server")
         .setting(AppSettings::VersionlessSubcommands)
-        .arg(Arg::with_name("port")
-             .help("The Web server will listen on this port.")
-             .required(false)
-             .short("p")
-             .long("port")
-             .value_name("PORT")
-             .takes_value(true)
-             .default_value("8000")
-            )
-        .arg(Arg::with_name("ip_address")
-             .help("The Web server will be bound to this IP address.")
-             .required(false)
-             .short("b")
-             .long("binding")
-             .value_name("IP_ADDRESS")
-             .takes_value(true)
-             .default_value("0.0.0.0")
-            )
+        .arg(
+            Arg::with_name("port")
+                .help("The Web server will listen on this port.")
+                .required(false)
+                .short("p")
+                .long("port")
+                .value_name("PORT")
+                .takes_value(true)
+                .default_value("8000"),
+        )
+        .arg(
+            Arg::with_name("ip_address")
+                .help("The Web server will be bound to this IP address.")
+                .required(false)
+                .short("b")
+                .long("binding")
+                .value_name("IP_ADDRESS")
+                .takes_value(true)
+                .default_value("0.0.0.0"),
+        )
         .about("start Web server");
 
 
@@ -69,7 +73,11 @@ pub fn read_title() -> String {
 }
 
 pub fn read_body(title: &str) -> String {
-    println!("\nOk! Let's write {} (Press {} when finished)\n", title, EOF);
+    println!(
+        "\nOk! Let's write {} (Press {} when finished)\n",
+        title,
+        EOF
+    );
     let mut body = String::new();
     stdin().read_to_string(&mut body).unwrap();
     body.trim().to_string()
@@ -89,5 +97,3 @@ const EOF: &'static str = "CTRL+D";
 
 #[cfg(windows)]
 const EOF: &'static str = "CTRL+Z";
-
-
