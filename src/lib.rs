@@ -9,8 +9,9 @@ extern crate serde_json;
 pub mod schema;
 pub mod models;
 
-use diesel::prelude::*;
 use diesel::pg::PgConnection;
+use diesel::prelude::*;
+use diesel::result::Error;
 
 use self::models::{NewPost, Post};
 
@@ -52,3 +53,9 @@ pub fn publish_post(conn: &PgConnection, post_id: i32) -> Post {
         .get_result::<Post>(conn)
         .unwrap()
 }
+
+pub fn find_post(conn: &PgConnection, post_id: i32) -> Result<Post, Error> {
+    use schema::posts::dsl::*;
+    posts.find(id).first(conn)
+}
+

@@ -1,19 +1,18 @@
-#![feature(plugin)]
+#![feature(plugin, use_extern_macros, custom_derive)]
 #![plugin(rocket_codegen)]
-#![feature(use_extern_macros)]
-#![feature(custom_derive)]
 
 #[macro_use]
 extern crate clap;
 extern crate diesel;
 extern crate dotenv;
-#[macro_use]
+#[cfg_attr(test, macro_use)]
 extern crate lazy_static;
 extern crate posts;
 extern crate rocket;
 extern crate rocket_contrib;
 
 mod cli;
+mod error;
 
 use self::posts::*;
 use dotenv::dotenv;
@@ -83,6 +82,8 @@ use rocket::request::FromFormValue;
 use rocket_contrib::Json;
 use self::models::Post;
 
+use error::Error as ServerError;
+
 /// Represents any value (including empty).
 /// Used for matching 'flag' params (i.e. we care only that the key was provided).
 struct AnyValue;
@@ -106,11 +107,18 @@ fn index_no_query() -> Json<Vec<Post>> {
     index(None)
 }
 
+// This would make sense more as `/all`, but I wanted to experiement with `FromForm`
 #[get("/?<all>")]
 fn index(all: Option<ShowAll>) -> Json<Vec<Post>> {
     let show_all = all.is_some();
     let posts = top_posts(&establish_connection(database_url()), show_all);
     Json(posts)
+}
+
+#[get("/<id>")]
+fn find(id: i32) -> Result<Json<Post>, ServerError> {
+    let post = find_post(&establish_connection(database_url()), id)?;
+    Ok(Json(post))
 }
 
 pub fn build_rocket(address: &str, port: u16) -> Rocket {
@@ -120,7 +128,7 @@ pub fn build_rocket(address: &str, port: u16) -> Rocket {
         .finalize()
         .unwrap();
     let rocket_instance = rocket::custom(config, false);
-    rocket_instance.mount("/", routes![index, index_no_query])
+    rocket_instance.mount("/posts", routes![index, index_no_query, find])
 }
 
 #[cfg(test)]
@@ -135,13 +143,19 @@ mod test {
 
     #[test]
     fn get_published_posts() {
-        let response = CLIENT.get("/").dispatch();
+        let response = CLIENT.get("/posts").dispatch();
         assert_eq!(response.status(), Status::Ok);
     }
 
     #[test]
     fn get_all_posts() {
-        let response = CLIENT.get("/?all=").dispatch();
+        let response = CLIENT.get("/posts?all=").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+    }
+
+    #[test]
+    fn get_post_by_id() {
+        let response = CLIENT.get("/posts/1").dispatch();
         assert_eq!(response.status(), Status::Ok);
     }
 }
