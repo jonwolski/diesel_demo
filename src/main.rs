@@ -8,6 +8,8 @@ extern crate posts;
 extern crate clap;
 extern crate diesel;
 extern crate dotenv;
+#[macro_use]
+extern crate lazy_static;
 extern crate rocket;
 extern crate rocket_contrib;
 
@@ -79,32 +81,38 @@ fn database_url() -> String {
 // TODO: move this to web.rs
 use rocket::Rocket;
 use rocket::config::{Config, Environment};
-use rocket_contrib::Json;
 use rocket::http::RawStr;
 use rocket::request::FromFormValue;
+use rocket_contrib::Json;
 use self::models::Post;
 
-struct SingletonParam;
+/// Represents any value (including empty).
+/// Used for matching 'flag' params (i.e. we care only that the key was provided).
+struct AnyValue;
 
-#[derive(FromForm)]
-struct Show {
-	all: Option<SingletonParam>,
-}
-
-impl<'v> FromFormValue<'v> for SingletonParam {
+impl<'v> FromFormValue<'v> for AnyValue {
 	type Error = ();
 
-	fn from_form_value(_ : &'v RawStr) -> Result<SingletonParam, ()> {
-		Ok(SingletonParam {})
+	fn from_form_value(_ : &'v RawStr) -> Result<AnyValue, ()> {
+		Ok(AnyValue {})
 	}
 }
 
+#[derive(FromForm)]
+struct ShowAll {
+	#[allow(dead_code)]
+	all: AnyValue,
+}
+
+// Rocket will not treat `/?` and `/` as equivalent
+#[get("/")]
+fn index_no_query() -> Json<Vec<Post>> {
+  index(None)
+}
+
 #[get("/?<all>")]
-fn index(all: Show) -> Json<Vec<Post>> {
-	let show_all = match all.all {
-		Some(_) => true,
-		None => false,
-	};
+fn index(all: Option<ShowAll>) -> Json<Vec<Post>> {
+	let show_all = all.is_some();
 	let posts = top_posts(&establish_connection(database_url()), show_all);
 	Json(posts)
 }
@@ -116,5 +124,27 @@ pub fn build_rocket(address: &str, port: u16) -> Rocket {
 		.finalize()
 		.unwrap();
 	let rocket_instance = rocket::custom(config, false);
-	rocket_instance.mount("/", routes![index])
+	rocket_instance.mount("/", routes![index, index_no_query])
+}
+
+#[cfg(test)]
+mod test {
+    use rocket::local::Client;
+    use rocket::http::Status;
+
+	lazy_static! {
+		static ref CLIENT: Client = Client::new(super::build_rocket("0.0.0.0", 8100)).expect("valid rocket instance");
+	}
+
+	#[test]
+	fn get_published_posts() {
+		let response = CLIENT.get("/").dispatch();
+		assert_eq!(response.status(), Status::Ok);
+	}
+
+	#[test]
+	fn get_all_posts() {
+		let response = CLIENT.get("/?all=").dispatch();
+		assert_eq!(response.status(), Status::Ok);
+	}
 }
