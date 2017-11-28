@@ -56,6 +56,6 @@ pub fn publish_post(conn: &PgConnection, post_id: i32) -> Post {
 
 pub fn find_post(conn: &PgConnection, post_id: i32) -> Result<Post, Error> {
     use schema::posts::dsl::*;
-    posts.find(id).first(conn)
+    posts.find(post_id).first(conn)
 }
 

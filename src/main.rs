@@ -127,7 +127,7 @@ pub fn build_rocket(address: &str, port: u16) -> Rocket {
         .port(port)
         .finalize()
         .unwrap();
-    let rocket_instance = rocket::custom(config, false);
+    let rocket_instance = rocket::custom(config, true);
     rocket_instance.mount("/posts", routes![index, index_no_query, find])
 }
 
