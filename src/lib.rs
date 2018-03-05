@@ -1,5 +1,6 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_codegen;
+#[macro_use] extern crate diesel_infer_schema;
 
 pub mod schema;
 pub mod models;
@@ -22,7 +23,8 @@ pub fn create_post<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Po
         body: body,
     };
 
-    diesel::insert(&new_post).into(posts::table)
+    diesel::insert_into(posts::table)
+        .values(&new_post)
         .get_result(conn)
         .expect(&format!("Saving failed for post: {}", new_post.title))
 }
